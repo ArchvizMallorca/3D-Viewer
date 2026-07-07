@@ -128,6 +128,144 @@ html, body {
 .btn:active { transform: scale(0.96); }
 .btn-icon { font-size: 15px; line-height: 1; }
 
+/* ---------- Panel de planos ---------- */
+.plans {
+  position: fixed;
+  left: clamp(16px, 4vw, 32px);
+  bottom: clamp(20px, 5vh, 34px);
+  z-index: 12;
+  display: flex;
+  flex-direction: column-reverse;   /* el menú aparece encima del botón */
+  align-items: flex-start;
+  gap: 10px;
+}
+.plans-menu {
+  width: 232px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transform-origin: bottom left;
+  animation: pop 0.18s ease;
+}
+@keyframes pop {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+.plans-menu-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 8px 10px 10px;
+}
+.plans-list { list-style: none; }
+.plans-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 10px;
+  border-radius: 9px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.plans-list li:hover { background: rgba(28,27,25,0.05); }
+.plans-list li .num {
+  font-size: 11px;
+  color: var(--ink-soft);
+  width: 18px;
+}
+.plans-list li .chev { margin-left: auto; color: var(--ink-soft); font-size: 13px; }
+
+/* ---------- Lightbox de planos ---------- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: rgba(236, 234, 230, 0.94);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fade 0.2s ease;
+}
+.lightbox[hidden] { display: none; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.lightbox-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: clamp(12px, 3vw, 20px) clamp(14px, 4vw, 28px);
+}
+.lightbox-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.lb-tab {
+  padding: 8px 15px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.lb-tab:hover { color: var(--ink); }
+.lb-tab.active {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.lightbox-actions { display: flex; gap: 8px; }
+.lb-btn {
+  width: 40px; height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: 50%;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.lb-btn:active { transform: scale(0.94); }
+
+.lightbox-stage {
+  flex: 1 1 auto;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(10px, 3vw, 30px);
+  -webkit-overflow-scrolling: touch;
+}
+.lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  transition: max-width 0.25s ease, max-height 0.25s ease;
+}
+/* Estado ampliado: la imagen crece y el contenedor hace scroll */
+.lightbox-stage.zoomed { align-items: flex-start; justify-content: flex-start; cursor: grab; }
+.lightbox-stage.zoomed .lightbox-img {
+  max-width: none;
+  max-height: none;
+  width: 190%;
+}
+
 /* ---------- Footer ---------- */
 .ui-bottom {
   position: fixed;

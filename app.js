@@ -20,6 +20,14 @@ const CONFIG = {
   autoRotateSpeed: 0.6,
 };
 
+/* Planos del proyecto (PNG con fondo transparente).
+   Añade, quita o reordena entradas aquí. Si el array está vacío,
+   el botón "Planos" no aparece. */
+const PLANS = [
+  { label: "Planta Baja", url: "planos/planta-baja.png" },
+  { label: "Alzado",      url: "planos/alzado.png" },
+];
+
 /* ---------------------------------------------------------
    Referencias DOM
    --------------------------------------------------------- */
@@ -248,6 +256,107 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
+
+/* ---------------------------------------------------------
+   Planos: panel desplegable + lightbox
+   --------------------------------------------------------- */
+(function setupPlans() {
+  const plansEl    = document.getElementById("plans");
+  const toggleBtn  = document.getElementById("plansToggle");
+  const menuEl     = document.getElementById("plansMenu");
+  const listEl     = document.getElementById("plansList");
+  const lightbox   = document.getElementById("lightbox");
+  const tabsEl     = document.getElementById("lightboxTabs");
+  const stageEl    = document.getElementById("lightboxStage");
+  const imgEl      = document.getElementById("lightboxImg");
+  const zoomBtn    = document.getElementById("lbZoom");
+  const closeBtn   = document.getElementById("lbClose");
+
+  if (!PLANS.length) return;          // sin planos → no mostramos nada
+  plansEl.hidden = false;
+
+  // Lista del desplegable
+  PLANS.forEach((p, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="num">${String(i + 1).padStart(2, "0")}</span>
+                    <span class="lbl">${p.label}</span>
+                    <span class="chev">→</span>`;
+    li.addEventListener("click", () => { closeMenu(); openLightbox(i); });
+    listEl.appendChild(li);
+  });
+
+  // Tabs del lightbox
+  PLANS.forEach((p, i) => {
+    const b = document.createElement("button");
+    b.className = "lb-tab";
+    b.textContent = p.label;
+    b.addEventListener("click", () => showPlan(i));
+    tabsEl.appendChild(b);
+  });
+
+  // --- Menú desplegable ---
+  function openMenu() {
+    menuEl.hidden = false;
+    toggleBtn.setAttribute("aria-expanded", "true");
+  }
+  function closeMenu() {
+    menuEl.hidden = true;
+    toggleBtn.setAttribute("aria-expanded", "false");
+  }
+  toggleBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menuEl.hidden ? openMenu() : closeMenu();
+  });
+  document.addEventListener("click", (e) => {
+    if (!plansEl.contains(e.target)) closeMenu();
+  });
+
+  // --- Lightbox ---
+  let current = -1;
+  function openLightbox(i) { lightbox.hidden = false; showPlan(i); }
+  function showPlan(i) {
+    current = i;
+    imgEl.src = PLANS[i].url;
+    imgEl.alt = PLANS[i].label;
+    setZoom(false);
+    [...tabsEl.children].forEach((t, k) =>
+      t.classList.toggle("active", k === i));
+  }
+  function closeLightbox() { lightbox.hidden = true; setZoom(false); }
+  closeBtn.addEventListener("click", closeLightbox);
+
+  // Cerrar con la tecla Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !lightbox.hidden) closeLightbox();
+  });
+
+  // --- Zoom (click / botón + arrastrar para desplazar) ---
+  let zoomed = false;
+  function setZoom(on) {
+    zoomed = on;
+    stageEl.classList.toggle("zoomed", on);
+    zoomBtn.textContent = on ? "－" : "＋";
+  }
+  zoomBtn.addEventListener("click", () => setZoom(!zoomed));
+  imgEl.addEventListener("click", () => setZoom(!zoomed));
+
+  // Arrastrar para desplazar cuando está ampliado
+  let dragging = false, sx = 0, sy = 0, sl = 0, st = 0;
+  stageEl.addEventListener("pointerdown", (e) => {
+    if (!zoomed) return;
+    dragging = true; sx = e.clientX; sy = e.clientY;
+    sl = stageEl.scrollLeft; st = stageEl.scrollTop;
+    stageEl.style.cursor = "grabbing";
+  });
+  window.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    stageEl.scrollLeft = sl - (e.clientX - sx);
+    stageEl.scrollTop  = st - (e.clientY - sy);
+  });
+  window.addEventListener("pointerup", () => {
+    dragging = false; stageEl.style.cursor = "";
+  });
+})();
 
 /* ---------------------------------------------------------
    Bucle de render

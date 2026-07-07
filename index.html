@@ -44,12 +44,38 @@
     Arrastra para explorar el proyecto
   </div>
 
+  <!-- Panel de planos (esquina inferior izquierda) -->
+  <div class="plans" id="plans" hidden>
+    <button class="btn plans-toggle" id="plansToggle" aria-expanded="false" title="Ver planos">
+      <span class="btn-icon" aria-hidden="true">▤</span>
+      <span class="btn-label">Planos</span>
+    </button>
+    <div class="plans-menu" id="plansMenu" hidden>
+      <div class="plans-menu-title">Planos del proyecto</div>
+      <ul class="plans-list" id="plansList"></ul>
+    </div>
+  </div>
+
   <!-- Controles -->
   <div class="ui-controls">
     <button class="btn" id="resetView" title="Restablecer vista">
       <span class="btn-icon" aria-hidden="true">⟳</span>
       <span class="btn-label">Reset view</span>
     </button>
+  </div>
+
+  <!-- Lightbox de planos -->
+  <div class="lightbox" id="lightbox" hidden>
+    <div class="lightbox-bar">
+      <div class="lightbox-tabs" id="lightboxTabs"></div>
+      <div class="lightbox-actions">
+        <button class="lb-btn" id="lbZoom" title="Zoom">＋</button>
+        <button class="lb-btn" id="lbClose" title="Cerrar" aria-label="Cerrar">✕</button>
+      </div>
+    </div>
+    <div class="lightbox-stage" id="lightboxStage">
+      <img class="lightbox-img" id="lightboxImg" alt="Plano" draggable="false" />
+    </div>
   </div>
 
   <!-- Pantalla de carga -->
