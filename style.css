@@ -1,5 +1,5 @@
 /* =========================================================
-   Visor 3D · Archviz Mallorca
+   Visor 3D · Archviz Mallorca — v2026-07-07
    Estética: minimalismo mediterráneo / arquitectura premium
    ========================================================= */
 
@@ -16,6 +16,9 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* El atributo hidden siempre oculta, aunque .btn defina display */
+[hidden] { display: none !important; }
 
 html, body {
   height: 100%;

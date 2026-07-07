@@ -1,6 +1,6 @@
 /* =========================================================
-   Visor 3D · Archviz Mallorca
-   Three.js + OrbitControls · Carga GLB · Iluminación estudio
+   Visor 3D · Archviz Mallorca — v2026-07-07
+   Three.js + OrbitControls · GLB · planos · medir · modo persona
    ========================================================= */
 
 import * as THREE from "three";
