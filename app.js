@@ -37,11 +37,11 @@ const PERSON = {
 };
 
 /* Herramienta de medir.
-   El modelo parece estar en centímetros → 100 unidades = 1 m.
-   Si una medida conocida no cuadra, ajusta 'unitsPerMeter'
-   (la etiqueta muestra también las unidades crudas para calibrar). */
+   El modelo está exportado en METROS → 1 unidad = 1 m.
+   Si algún modelo viene en otra escala (p. ej. cm), ajusta 'unitsPerMeter'
+   (100 = cm, 1000 = mm). La etiqueta muestra también las unidades crudas. */
 const MEASURE = {
-  unitsPerMeter: 100,
+  unitsPerMeter: 1,
   unit: "m",
   decimals: 2,
 };
@@ -166,14 +166,38 @@ loader.load(
   (gltf) => {
     const model = gltf.scene;
 
-    // Sombras en todas las mallas
+    // Sombras + detección de materiales translúcidos (cristales, etc.)
     model.traverse((o) => {
-      if (o.isMesh) {
-        o.castShadow = true;
-        o.receiveShadow = true;
-        if (o.material) o.material.side = THREE.FrontSide;
-        pickMeshes.push(o);
-      }
+      if (!o.isMesh) return;
+      o.castShadow = true;
+      o.receiveShadow = true;
+      pickMeshes.push(o);
+
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      let hasGlass = false;
+
+      mats.forEach((m) => {
+        if (!m) return;
+        // ¿Material translúcido? (alpha < 1, transparente, o con transmisión)
+        const translucent =
+          m.transparent === true ||
+          (typeof m.opacity === "number" && m.opacity < 1) ||
+          (typeof m.transmission === "number" && m.transmission > 0);
+
+        if (translucent) {
+          hasGlass = true;
+          m.transparent = true;
+          m.side = THREE.DoubleSide;   // cristal visible por dentro y por fuera
+          m.depthWrite = false;        // evita parpadeos por orden de dibujado
+          if (m.opacity === 1) m.opacity = 0.35;  // si vino sin opacidad, dale cuerpo
+          m.needsUpdate = true;
+        } else {
+          m.side = THREE.FrontSide;
+        }
+      });
+
+      // El cristal no proyecta una sombra sólida
+      if (hasGlass) o.castShadow = false;
     });
 
     scene.add(model);
