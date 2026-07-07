@@ -58,6 +58,14 @@
 
   <!-- Controles -->
   <div class="ui-controls">
+    <button class="btn" id="measureBtn" title="Medir distancia entre dos puntos">
+      <span class="btn-icon" aria-hidden="true">↔</span>
+      <span class="btn-label">Medir</span>
+    </button>
+    <button class="btn" id="personBtn" title="Recorrido en modo persona">
+      <span class="btn-icon" aria-hidden="true">▲</span>
+      <span class="btn-label">Modo persona</span>
+    </button>
     <button class="btn" id="resetView" title="Restablecer vista">
       <span class="btn-icon" aria-hidden="true">⟳</span>
       <span class="btn-label">Reset view</span>
@@ -92,6 +100,33 @@
       <div class="error-msg" id="errorMsg">Comprueba que el archivo <code>model.glb</code> está junto al index.html.</div>
     </div>
   </div>
+
+  <!-- Modo persona: ayuda, mira y controles táctiles -->
+  <div class="person-hint" id="personHint" hidden>
+    <span class="pc-desktop">WASD / flechas para moverte · ratón para mirar · Espacio sube · C baja · Shift corre · Esc salir</span>
+    <span class="pc-touch">Arrastra para mirar · joystick para moverte · ▲▼ para subir/bajar de planta</span>
+  </div>
+  <div class="crosshair" id="crosshair" hidden></div>
+
+  <div class="person-touch" id="personTouch" hidden>
+    <div class="joystick" id="joystick"><div class="joystick-knob" id="joystickKnob"></div></div>
+    <div class="vertical-pad">
+      <button class="vbtn" id="upBtn" aria-label="Subir">▲</button>
+      <button class="vbtn" id="downBtn" aria-label="Bajar">▼</button>
+    </div>
+  </div>
+
+  <button class="btn person-exit" id="personExit" hidden>
+    <span class="btn-icon" aria-hidden="true">✕</span>
+    <span class="btn-label">Salir</span>
+  </button>
+
+  <!-- Herramienta de medir: ayuda + etiqueta flotante -->
+  <div class="measure-hint" id="measureHint" hidden>
+    <span id="measureHintText">Toca el primer punto sobre el modelo</span>
+    <button class="measure-clear" id="measureClear">Borrar</button>
+  </div>
+  <div class="measure-label" id="measureLabel" hidden></div>
 
   <footer class="ui-bottom">archvizmallorca.com</footer>
 

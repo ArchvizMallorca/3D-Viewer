@@ -351,11 +351,185 @@ html, body {
   font-size: 12px;
 }
 
+/* ---------- Botón activo (medir / persona) ---------- */
+.btn.active {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.btn.active .btn-icon { color: #fff; }
+
+/* ---------- Modo persona ---------- */
+.person-hint {
+  position: fixed;
+  left: 50%; top: clamp(90px, 16vh, 130px);
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: 90vw;
+  text-align: center;
+  padding: 10px 18px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.pc-touch { display: none; }
+.person-hint[hidden] { display: none; }
+
+.crosshair {
+  position: fixed;
+  left: 50%; top: 50%;
+  width: 8px; height: 8px;
+  margin: -4px 0 0 -4px;
+  z-index: 15;
+  border: 1.5px solid rgba(28,27,25,0.6);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.crosshair[hidden] { display: none; }
+
+.person-exit {
+  position: fixed;
+  top: clamp(16px, 4vw, 28px);
+  right: clamp(16px, 4vw, 28px);
+  z-index: 21;
+}
+.person-exit[hidden] { display: none; }
+
+/* Oculta la UI orbital mientras recorres en primera persona */
+body.person-active .ui-top,
+body.person-active .ui-controls,
+body.person-active .plans,
+body.person-active .hint,
+body.person-active .ui-bottom { display: none; }
+
+/* Controles táctiles del modo persona */
+.person-touch { display: none; }
+body.person-active .person-touch {
+  display: flex;
+  position: fixed;
+  inset: auto 0 0 0;
+  bottom: clamp(20px, 6vh, 40px);
+  z-index: 20;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 clamp(20px, 6vw, 40px);
+  pointer-events: none;
+}
+.person-touch[hidden] { display: none !important; }
+.joystick {
+  position: relative;
+  width: 116px; height: 116px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid var(--panel-brd);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: auto;
+  touch-action: none;
+}
+.joystick-knob {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 48px; height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.85;
+}
+.vertical-pad { display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
+.vbtn {
+  width: 54px; height: 54px;
+  font-size: 18px;
+  color: var(--ink);
+  background: rgba(255,255,255,0.6);
+  border: 1px solid var(--panel-brd);
+  border-radius: 50%;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  touch-action: none;
+}
+
+/* ---------- Herramienta de medir ---------- */
+.measure-hint {
+  position: fixed;
+  left: 50%; top: clamp(90px, 16vh, 130px);
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px 10px 18px;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: 100px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.measure-hint[hidden] { display: none; }
+.measure-clear {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: rgba(28,27,25,0.06);
+  border: none;
+  border-radius: 100px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+.measure-clear:hover { color: var(--ink); }
+
+.measure-label {
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 18;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--ink);
+  border-radius: 100px;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.measure-label[hidden] { display: none; }
+.measure-label small {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
 /* ---------- Móvil ---------- */
 @media (max-width: 640px) {
   .ui-bottom { display: none; }
   .hint { font-size: 12px; bottom: 92px; }
   .btn-label { display: inline; }
+}
+
+/* En dispositivos táctiles, muestra las instrucciones de dedo */
+@media (pointer: coarse) {
+  .pc-desktop { display: none; }
+  .pc-touch { display: inline; }
+}
+
+/* Respeta prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .loader-ring { animation: none; }
 }
 
 /* Respeta prefers-reduced-motion */
