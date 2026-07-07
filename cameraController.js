@@ -1,0 +1,268 @@
+/* =========================================================
+   cameraController.js · cámara orbital + modo persona
+   - Orbit: encuadre cercano, permite entrar al interior
+   - Persona: recorrido en 1ª persona (WASD/ratón + táctil)
+   - Spawn desde la vista actual o desde un hotspot de inicio
+   ========================================================= */
+
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+export class CameraController {
+  /**
+   * @param {THREE.PerspectiveCamera} camera
+   * @param {HTMLElement} dom  canvas del renderer
+   * @param {object} config    CONFIG global
+   */
+  constructor(camera, dom, config) {
+    this.camera = camera;
+    this.dom = dom;
+    this.config = config;
+    this.mode = "orbit";
+    this.onModeChange = null;          // callback (mode) => void
+    this.startSpawnProvider = null;    // () => {position,yaw}|null (hotspot de inicio)
+
+    // --- Orbit ---
+    const c = new OrbitControls(camera, dom);
+    c.enableDamping = true;
+    c.dampingFactor = 0.08;
+    c.rotateSpeed = 0.7;
+    c.zoomSpeed = 0.9;
+    c.panSpeed = 0.7;
+    c.enablePan = true;
+    c.screenSpacePanning = false;
+    c.autoRotate = !!config.autoRotate;
+    c.autoRotateSpeed = config.autoRotateSpeed ?? 0.6;
+    c.maxPolarAngle = Math.PI * 0.92;  // casi hasta el suelo, permite mirar interiores
+    c.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+    this.orbit = c;
+
+    this._home = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
+    this._resetting = false;
+
+    // --- Estado persona ---
+    this.size = new THREE.Vector3(10, 3, 10);
+    this.center = new THREE.Vector3();
+    this._yaw = 0;
+    this._pitch = 0;
+    this._keys = new Set();
+    this._vert = 0;                    // -1 baja, +1 sube (botones móvil)
+    this._joy = { x: 0, y: 0 };
+    this._eyeH = 1.6;
+    this._speed = 3;
+    this._orbitSaved = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
+    this._fwd = new THREE.Vector3();
+    this._right = new THREE.Vector3();
+    this._UP = new THREE.Vector3(0, 1, 0);
+
+    this._bindPersonInput();
+  }
+
+  /* ---------- Encuadre orbital ---------- */
+  frame(box) {
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    this.size.copy(size);
+    this.center.copy(center);
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = this.camera.fov * (Math.PI / 180);
+    let dist = (maxDim / 2) / Math.tan(fov / 2);
+    dist *= 1.2;                       // más cerca que antes (antes 1.6)
+
+    const dir = new THREE.Vector3(1, 0.6, 1).normalize();
+    this.camera.position.copy(center.clone().add(dir.multiplyScalar(dist)));
+    this.camera.near = Math.max(0.01, maxDim / 500);
+    this.camera.far = dist * 100;
+    this.camera.updateProjectionMatrix();
+
+    this.orbit.target.copy(center);
+    this.orbit.minDistance = 0.2;      // permite acercarse y entrar al interior
+    this.orbit.maxDistance = dist * 3;
+    this.orbit.update();
+
+    this._home.pos.copy(this.camera.position);
+    this._home.target.copy(this.orbit.target);
+  }
+
+  reset() {
+    if (this.mode === "person") this.exitPerson();
+    this._resetting = true;
+    this.orbit.autoRotate = false;
+  }
+
+  /* ---------- Modo persona ---------- */
+  _autoParams() {
+    const p = this.config.person || {};
+    const foot = Math.max(this.size.x, this.size.z) || 10;
+    this._eyeH = p.eyeHeight != null ? p.eyeHeight : 1.6;
+    this._speed = p.walkSpeed != null ? p.walkSpeed : Math.max(2, foot * 0.06);
+  }
+
+  /** Punto de inicio a partir de la vista orbital actual (nunca queda enterrado). */
+  spawnFromView() {
+    const t = this.orbit.target;
+    const dx = t.x - this.camera.position.x;
+    const dz = t.z - this.camera.position.z;
+    return {
+      position: new THREE.Vector3(t.x, this._eyeHOrDefault(), t.z),
+      yaw: Math.atan2(-dx, -dz),       // mirar hacia donde estaba el target
+    };
+  }
+  _eyeHOrDefault() {
+    const p = this.config.person || {};
+    return p.eyeHeight != null ? p.eyeHeight : 1.6;
+  }
+
+  /**
+   * Entra en modo persona.
+   * @param {{position:THREE.Vector3, yaw?:number}} [spawn]
+   */
+  enterPerson(spawn) {
+    if (this.mode === "person") return;
+    this._autoParams();
+    this.mode = "person";
+
+    this._orbitSaved.pos.copy(this.camera.position);
+    this._orbitSaved.target.copy(this.orbit.target);
+    this.orbit.enabled = false;
+    this.orbit.autoRotate = false;
+
+    const s = spawn ||
+      (this.startSpawnProvider && this.startSpawnProvider()) ||
+      this.spawnFromView();
+    this.camera.position.copy(s.position);
+    this._yaw = s.yaw || 0;
+    this._pitch = 0;
+    this.camera.rotation.order = "YXZ";
+    this._applyLook();
+
+    if (!this._isTouch() && this.dom.requestPointerLock) this.dom.requestPointerLock();
+    this.onModeChange && this.onModeChange("person");
+  }
+
+  exitPerson() {
+    if (this.mode !== "person") return;
+    this.mode = "orbit";
+    document.exitPointerLock && document.exitPointerLock();
+    this._keys.clear();
+    this._vert = 0; this._joy.x = this._joy.y = 0;
+
+    this.camera.position.copy(this._orbitSaved.pos);
+    this.orbit.target.copy(this._orbitSaved.target);
+    this.orbit.enabled = true;
+    this.orbit.update();
+    this.onModeChange && this.onModeChange("orbit");
+  }
+
+  togglePerson() { this.mode === "person" ? this.exitPerson() : this.enterPerson(); }
+
+  /* Entradas externas (joystick / botones táctiles de la UI) */
+  setJoystick(x, y) { this._joy.x = x; this._joy.y = y; }
+  setVertical(v) { this._vert = v; }
+
+  _isTouch() {
+    return window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+  }
+
+  _applyLook() {
+    this._pitch = Math.max(-1.4, Math.min(1.4, this._pitch));
+    this.camera.rotation.set(this._pitch, this._yaw, 0, "YXZ");
+  }
+
+  _bindPersonInput() {
+    const dom = this.dom;
+
+    // Ratón (pointer lock)
+    dom.addEventListener("click", () => {
+      if (this.mode === "person" && !this._isTouch() &&
+          document.pointerLockElement !== dom) dom.requestPointerLock?.();
+    });
+    document.addEventListener("mousemove", (e) => {
+      if (this.mode !== "person") return;
+      if (document.pointerLockElement !== dom) return;
+      this._yaw -= e.movementX * 0.0022;
+      this._pitch -= e.movementY * 0.0022;
+      this._applyLook();
+    });
+
+    // Teclado
+    document.addEventListener("keydown", (e) => {
+      if (this.mode !== "person") return;
+      if (e.key === "Escape") { this.exitPerson(); return; }
+      this._keys.add(e.key.toLowerCase());
+      if (e.code === "Space") { this._space = true; e.preventDefault(); }
+      if (e.key.toLowerCase() === "c") this._ctrlDown = true;
+    });
+    document.addEventListener("keyup", (e) => {
+      this._keys.delete(e.key.toLowerCase());
+      if (e.code === "Space") this._space = false;
+      if (e.key.toLowerCase() === "c") this._ctrlDown = false;
+    });
+
+    // Mirar con el dedo (arrastrar en el canvas)
+    let lookId = null, lx = 0, ly = 0;
+    dom.addEventListener("touchstart", (e) => {
+      if (this.mode !== "person") return;
+      const t = e.changedTouches[0];
+      lookId = t.identifier; lx = t.clientX; ly = t.clientY;
+    }, { passive: true });
+    dom.addEventListener("touchmove", (e) => {
+      if (this.mode !== "person" || lookId === null) return;
+      for (const t of e.changedTouches) {
+        if (t.identifier !== lookId) continue;
+        this._yaw -= (t.clientX - lx) * 0.005;
+        this._pitch -= (t.clientY - ly) * 0.005;
+        lx = t.clientX; ly = t.clientY; this._applyLook();
+      }
+    }, { passive: true });
+    dom.addEventListener("touchend", (e) => {
+      for (const t of e.changedTouches) if (t.identifier === lookId) lookId = null;
+    });
+  }
+
+  /* ---------- Update por frame ---------- */
+  update(dt) {
+    if (this.mode === "person") {
+      this._updatePerson(dt);
+      return;
+    }
+    // Orbit
+    if (this._resetting) {
+      this.camera.position.lerp(this._home.pos, 0.12);
+      this.orbit.target.lerp(this._home.target, 0.12);
+      if (this.camera.position.distanceTo(this._home.pos) < 0.02) {
+        this.camera.position.copy(this._home.pos);
+        this.orbit.target.copy(this._home.target);
+        this._resetting = false;
+      }
+    }
+    this.orbit.update();
+  }
+
+  _updatePerson(dt) {
+    this.camera.getWorldDirection(this._fwd);
+    this._fwd.y = 0; this._fwd.normalize();
+    this._right.crossVectors(this._fwd, this._UP).normalize();
+
+    const run = this._keys.has("shift") ? (this.config.person?.runFactor || 2.2) : 1;
+    const step = this._speed * run * dt;
+
+    let mf = 0, mr = 0, mv = 0;
+    if (this._keys.has("w") || this._keys.has("arrowup")) mf += 1;
+    if (this._keys.has("s") || this._keys.has("arrowdown")) mf -= 1;
+    if (this._keys.has("d") || this._keys.has("arrowright")) mr += 1;
+    if (this._keys.has("a") || this._keys.has("arrowleft")) mr -= 1;
+    mf -= this._joy.y; mr += this._joy.x;
+    if (this._space || this._vert > 0) mv += 1;
+    if (this._ctrlDown || this._vert < 0) mv -= 1;
+
+    this.camera.position.addScaledVector(this._fwd, mf * step);
+    this.camera.position.addScaledVector(this._right, mr * step);
+    this.camera.position.y += mv * step;
+  }
+
+  onFirstInteraction(cb) {
+    this.orbit.addEventListener("start", cb);
+  }
+}

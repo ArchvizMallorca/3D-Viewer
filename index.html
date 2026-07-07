@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Visor 3D · Archviz Mallorca — v2026-07-07 (visor + planos + medir + modo persona) -->
+<!-- Visor 3D · Archviz Mallorca — v2026-07-07 (arquitectura modular) -->
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -8,7 +8,6 @@
   <title>Visor 3D · Archviz Mallorca</title>
 
   <meta name="description" content="Visor 3D de volumetría arquitectónica — fase conceptual." />
-  <!-- Open Graph para compartir el link por WhatsApp / email -->
   <meta property="og:title" content="Visor 3D · Fase conceptual" />
   <meta property="og:description" content="Explora la volumetría del proyecto en 3D." />
   <meta property="og:type" content="website" />
@@ -16,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="styles.css" />
 
   <!-- Three.js como import map (ES modules, sin build) -->
   <script type="importmap">
@@ -32,6 +31,9 @@
   <!-- Lienzo 3D -->
   <div id="viewer"></div>
 
+  <!-- Capa de hotspots (marcadores 3D→2D) -->
+  <div id="hotspots" class="hotspots-layer"></div>
+
   <!-- Cabecera / marca -->
   <header class="ui-top">
     <div class="brand">ARCHVIZ MALLORCA</div>
@@ -42,10 +44,10 @@
   <!-- Instrucción de interacción -->
   <div class="hint" id="hint">
     <span class="hint-icon" aria-hidden="true">↺</span>
-    Arrastra para explorar el proyecto
+    Arrastra para explorar · rueda para acercarte
   </div>
 
-  <!-- Panel de planos (esquina inferior izquierda) -->
+  <!-- Panel de planos -->
   <div class="plans" id="plans" hidden>
     <button class="btn plans-toggle" id="plansToggle" aria-expanded="false" title="Ver planos">
       <span class="btn-icon" aria-hidden="true">▤</span>
@@ -122,7 +124,7 @@
     <span class="btn-label">Salir</span>
   </button>
 
-  <!-- Herramienta de medir: ayuda + etiqueta flotante -->
+  <!-- Herramienta de medir -->
   <div class="measure-hint" id="measureHint" hidden>
     <span id="measureHintText">Toca el primer punto sobre el modelo</span>
     <button class="measure-clear" id="measureClear">Borrar</button>
@@ -142,48 +144,31 @@
         if (m) m.innerHTML = msg;
         if (e) e.hidden = false;
       }
-      window.__viewerFail = fail;
-
-      // 1) Abierto con doble clic (file://) → el navegador bloquea el .glb
       if (location.protocol === "file:") {
-        fail(
-          "Estás abriendo el archivo con doble clic (<code>file://</code>), " +
-          "y el navegador bloquea la carga del modelo 3D.<br><br>" +
-          "Ábrelo con un servidor local: en la carpeta ejecuta " +
-          "<code>python -m http.server 8000</code> y entra en " +
-          "<code>http://localhost:8000</code>. O súbelo a un hosting (Netlify, Vercel)."
-        );
+        fail("Estás abriendo el archivo con doble clic (<code>file://</code>), y el navegador " +
+             "bloquea la carga del modelo 3D.<br><br>Ábrelo con un servidor local: en la carpeta " +
+             "ejecuta <code>python -m http.server 8000</code> y entra en <code>http://localhost:8000</code>. " +
+             "O súbelo a un hosting (GitHub Pages, Netlify).");
         return;
       }
-
-      // 2) Si algo revienta al importar los módulos (CDN bloqueado, navegador antiguo)
       window.addEventListener("error", function (ev) {
-        var t = ev.target;
-        if (t && t.tagName === "SCRIPT") {
-          fail(
-            "No se pudieron cargar las librerías 3D (Three.js) desde internet.<br><br>" +
-            "Comprueba tu conexión, o que ninguna red/firewall bloquee " +
-            "<code>cdn.jsdelivr.net</code>."
-          );
+        if (ev.target && ev.target.tagName === "SCRIPT") {
+          fail("No se pudieron cargar las librerías 3D (Three.js) desde internet.<br><br>" +
+               "Comprueba tu conexión o que no se bloquee <code>cdn.jsdelivr.net</code>.");
         }
       }, true);
-
-      // 3) Salvavidas: si a los 30 s sigue cargando, avisa
       window.__viewerLoaded = false;
       setTimeout(function () {
         var l = document.getElementById("loader");
         if (!window.__viewerLoaded && l && !l.classList.contains("hidden")) {
-          fail(
-            "La carga está tardando demasiado.<br><br>" +
-            "Revisa que el archivo <code>model.glb</code> esté junto al " +
-            "<code>index.html</code> y que tengas conexión a internet " +
-            "(las librerías 3D se cargan desde <code>cdn.jsdelivr.net</code>)."
-          );
+          fail("La carga está tardando demasiado.<br><br>Revisa que <code>model.glb</code> esté junto al " +
+               "<code>index.html</code> y que tengas conexión (las librerías vienen de <code>cdn.jsdelivr.net</code>).");
         }
       }, 30000);
     })();
   </script>
 
-  <script type="module" src="app.js"></script>
+  <!-- Punto de entrada: módulos ES -->
+  <script type="module" src="viewer.js"></script>
 </body>
 </html>

@@ -1,0 +1,568 @@
+/* =========================================================
+   Visor 3D · Archviz Mallorca — v2026-07-07 (modular)
+   Estética: minimalismo mediterráneo / arquitectura premium
+   ========================================================= */
+
+:root {
+  --bg: #eceae6;          /* gris cálido arquitectónico */
+  --bg-2: #f4f2ee;        /* claro para degradado de fondo */
+  --ink: #1c1b19;         /* texto principal */
+  --ink-soft: #6b6862;    /* texto secundario */
+  --line: rgba(28, 27, 25, 0.12);
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-brd: rgba(255, 255, 255, 0.9);
+  --shadow: 0 8px 30px rgba(28, 27, 25, 0.10);
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* El atributo hidden siempre oculta, aunque .btn defina display */
+[hidden] { display: none !important; }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Lienzo 3D a pantalla completa */
+#viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  touch-action: none;              /* gestos táctiles limpios */
+  cursor: grab;
+}
+#viewer:active { cursor: grabbing; }
+#viewer canvas { display: block; }
+
+/* Capa de hotspots */
+.hotspots-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;            /* solo los propios marcadores capturan clics */
+}
+
+/* ---------- Cabecera / marca ---------- */
+.ui-top {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  padding: clamp(18px, 4vw, 34px) clamp(20px, 5vw, 44px) 60px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(236,234,230,0.85) 0%, rgba(236,234,230,0) 100%);
+}
+.brand {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.project-title {
+  font-size: clamp(22px, 4.5vw, 34px);
+  font-weight: 300;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+.project-subtitle {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ---------- Instrucción ---------- */
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(84px, 14vh, 120px);
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 18px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: 100px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.hint.hidden { opacity: 0; transform: translateX(-50%) translateY(8px); }
+.hint-icon { font-size: 15px; color: var(--ink-soft); }
+
+/* ---------- Controles ---------- */
+.ui-controls {
+  position: fixed;
+  right: clamp(16px, 4vw, 32px);
+  bottom: clamp(20px, 5vh, 34px);
+  z-index: 10;
+  display: flex;
+  gap: 10px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: 100px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+.btn:hover { background: rgba(255,255,255,0.9); }
+.btn:active { transform: scale(0.96); }
+.btn-icon { font-size: 15px; line-height: 1; }
+
+/* ---------- Panel de planos ---------- */
+.plans {
+  position: fixed;
+  left: clamp(16px, 4vw, 32px);
+  bottom: clamp(20px, 5vh, 34px);
+  z-index: 12;
+  display: flex;
+  flex-direction: column-reverse;   /* el menú aparece encima del botón */
+  align-items: flex-start;
+  gap: 10px;
+}
+.plans-menu {
+  width: 232px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transform-origin: bottom left;
+  animation: pop 0.18s ease;
+}
+@keyframes pop {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+.plans-menu-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 8px 10px 10px;
+}
+.plans-list { list-style: none; }
+.plans-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 10px;
+  border-radius: 9px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.plans-list li:hover { background: rgba(28,27,25,0.05); }
+.plans-list li .num {
+  font-size: 11px;
+  color: var(--ink-soft);
+  width: 18px;
+}
+.plans-list li .chev { margin-left: auto; color: var(--ink-soft); font-size: 13px; }
+
+/* ---------- Lightbox de planos ---------- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: rgba(236, 234, 230, 0.94);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fade 0.2s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.lightbox-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: clamp(12px, 3vw, 20px) clamp(14px, 4vw, 28px);
+}
+.lightbox-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.lb-tab {
+  padding: 8px 15px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.lb-tab:hover { color: var(--ink); }
+.lb-tab.active {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.lightbox-actions { display: flex; gap: 8px; }
+.lb-btn {
+  width: 40px; height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: 50%;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.lb-btn:active { transform: scale(0.94); }
+
+.lightbox-stage {
+  flex: 1 1 auto;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(10px, 3vw, 30px);
+  -webkit-overflow-scrolling: touch;
+}
+.lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  transition: max-width 0.25s ease, max-height 0.25s ease;
+}
+.lightbox-stage.zoomed { align-items: flex-start; justify-content: flex-start; cursor: grab; }
+.lightbox-stage.zoomed .lightbox-img {
+  max-width: none;
+  max-height: none;
+  width: 190%;
+}
+
+/* ---------- Footer ---------- */
+.ui-bottom {
+  position: fixed;
+  left: clamp(20px, 5vw, 44px);
+  bottom: clamp(20px, 5vh, 34px);
+  z-index: 10;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+/* ---------- Loader ---------- */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: radial-gradient(circle at 50% 40%, var(--bg-2) 0%, var(--bg) 70%);
+  transition: opacity 0.7s ease;
+}
+.loader.hidden { opacity: 0; pointer-events: none; }
+.loader-ring {
+  width: 42px; height: 42px;
+  border: 2px solid var(--line);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-text {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.loader-bar {
+  width: 160px; height: 2px;
+  background: var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.loader-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--ink);
+  transition: width 0.25s ease;
+}
+
+/* ---------- Error ---------- */
+.error {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+.error-box {
+  max-width: 420px;
+  text-align: center;
+  padding: 32px 28px;
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.error-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+.error-msg { font-size: 13px; line-height: 1.6; color: var(--ink-soft); }
+.error-msg code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: rgba(28,27,25,0.06);
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+/* ---------- Botón activo (medir / persona) ---------- */
+.btn.active {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.btn.active .btn-icon { color: #fff; }
+
+/* ---------- Hotspots ---------- */
+.hotspot {
+  position: absolute;
+  left: 0; top: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: 100px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  pointer-events: auto;
+  white-space: nowrap;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+.hotspot:hover { transform: translate(-50%, -50%) scale(1.05) !important; }
+.hotspot-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 0 0 4px rgba(28,27,25,0.12);
+}
+.hotspot-enter .hotspot-dot { background: #2e7d5b; box-shadow: 0 0 0 4px rgba(46,125,91,0.2); }
+
+/* ---------- Modo persona ---------- */
+.person-hint {
+  position: fixed;
+  left: 50%; top: clamp(90px, 16vh, 130px);
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: 90vw;
+  text-align: center;
+  padding: 10px 18px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.pc-touch { display: none; }
+
+.crosshair {
+  position: fixed;
+  left: 50%; top: 50%;
+  width: 8px; height: 8px;
+  margin: -4px 0 0 -4px;
+  z-index: 15;
+  border: 1.5px solid rgba(28,27,25,0.6);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.person-exit {
+  position: fixed;
+  top: clamp(16px, 4vw, 28px);
+  right: clamp(16px, 4vw, 28px);
+  z-index: 21;
+}
+
+/* Oculta la UI orbital mientras recorres en primera persona */
+body.person-active .ui-top,
+body.person-active .ui-controls,
+body.person-active .plans,
+body.person-active .hint,
+body.person-active .hotspots-layer,
+body.person-active .ui-bottom { display: none; }
+
+/* Controles táctiles del modo persona */
+.person-touch { display: none; }
+body.person-active .person-touch {
+  display: flex;
+  position: fixed;
+  inset: auto 0 0 0;
+  bottom: clamp(20px, 6vh, 40px);
+  z-index: 20;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 clamp(20px, 6vw, 40px);
+  pointer-events: none;
+}
+.joystick {
+  position: relative;
+  width: 116px; height: 116px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid var(--panel-brd);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: auto;
+  touch-action: none;
+}
+.joystick-knob {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 48px; height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.85;
+}
+.vertical-pad { display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
+.vbtn {
+  width: 54px; height: 54px;
+  font-size: 18px;
+  color: var(--ink);
+  background: rgba(255,255,255,0.6);
+  border: 1px solid var(--panel-brd);
+  border-radius: 50%;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  touch-action: none;
+}
+
+/* ---------- Herramienta de medir ---------- */
+.measure-hint {
+  position: fixed;
+  left: 50%; top: clamp(90px, 16vh, 130px);
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px 10px 18px;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  border-radius: 100px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.measure-clear {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: rgba(28,27,25,0.06);
+  border: none;
+  border-radius: 100px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+.measure-clear:hover { color: var(--ink); }
+
+.measure-label {
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 18;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--ink);
+  border-radius: 100px;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.measure-label small {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 640px) {
+  .ui-bottom { display: none; }
+  .hint { font-size: 12px; bottom: 92px; }
+  .btn-label { display: inline; }
+}
+
+/* En dispositivos táctiles, muestra las instrucciones de dedo */
+@media (pointer: coarse) {
+  .pc-desktop { display: none; }
+  .pc-touch { display: inline; }
+}
+
+/* Respeta prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .loader-ring { animation: none; }
+}
