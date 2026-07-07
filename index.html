@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#eceae6" />
+  <title>Visor 3D · Archviz Mallorca</title>
+
+  <meta name="description" content="Visor 3D de volumetría arquitectónica — fase conceptual." />
+  <!-- Open Graph para compartir el link por WhatsApp / email -->
+  <meta property="og:title" content="Visor 3D · Fase conceptual" />
+  <meta property="og:description" content="Explora la volumetría del proyecto en 3D." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Three.js como import map (ES modules, sin build) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- Lienzo 3D -->
+  <div id="viewer"></div>
+
+  <!-- Cabecera / marca -->
+  <header class="ui-top">
+    <div class="brand">ARCHVIZ MALLORCA</div>
+    <h1 class="project-title" id="projectTitle">Villa Conceptual</h1>
+    <div class="project-subtitle" id="projectSubtitle">Fase conceptual · Volumetría</div>
+  </header>
+
+  <!-- Instrucción de interacción -->
+  <div class="hint" id="hint">
+    <span class="hint-icon" aria-hidden="true">↺</span>
+    Arrastra para explorar el proyecto
+  </div>
+
+  <!-- Controles -->
+  <div class="ui-controls">
+    <button class="btn" id="resetView" title="Restablecer vista">
+      <span class="btn-icon" aria-hidden="true">⟳</span>
+      <span class="btn-label">Reset view</span>
+    </button>
+  </div>
+
+  <!-- Pantalla de carga -->
+  <div class="loader" id="loader">
+    <div class="loader-ring"></div>
+    <div class="loader-text" id="loaderText">Cargando modelo…</div>
+    <div class="loader-bar"><div class="loader-bar-fill" id="loaderBar"></div></div>
+  </div>
+
+  <!-- Mensaje de error -->
+  <div class="error" id="error" hidden>
+    <div class="error-box">
+      <div class="error-title">No se pudo cargar el modelo</div>
+      <div class="error-msg" id="errorMsg">Comprueba que el archivo <code>model.glb</code> está junto al index.html.</div>
+    </div>
+  </div>
+
+  <footer class="ui-bottom">archvizmallorca.com</footer>
+
+  <!-- Diagnóstico: evita que la página se quede "cargando" en silencio -->
+  <script>
+    (function () {
+      function fail(msg) {
+        var l = document.getElementById("loader");
+        var e = document.getElementById("error");
+        var m = document.getElementById("errorMsg");
+        if (l) l.classList.add("hidden");
+        if (m) m.innerHTML = msg;
+        if (e) e.hidden = false;
+      }
+      window.__viewerFail = fail;
+
+      // 1) Abierto con doble clic (file://) → el navegador bloquea el .glb
+      if (location.protocol === "file:") {
+        fail(
+          "Estás abriendo el archivo con doble clic (<code>file://</code>), " +
+          "y el navegador bloquea la carga del modelo 3D.<br><br>" +
+          "Ábrelo con un servidor local: en la carpeta ejecuta " +
+          "<code>python -m http.server 8000</code> y entra en " +
+          "<code>http://localhost:8000</code>. O súbelo a un hosting (Netlify, Vercel)."
+        );
+        return;
+      }
+
+      // 2) Si algo revienta al importar los módulos (CDN bloqueado, navegador antiguo)
+      window.addEventListener("error", function (ev) {
+        var t = ev.target;
+        if (t && t.tagName === "SCRIPT") {
+          fail(
+            "No se pudieron cargar las librerías 3D (Three.js) desde internet.<br><br>" +
+            "Comprueba tu conexión, o que ninguna red/firewall bloquee " +
+            "<code>cdn.jsdelivr.net</code>."
+          );
+        }
+      }, true);
+
+      // 3) Salvavidas: si a los 30 s sigue cargando, avisa
+      window.__viewerLoaded = false;
+      setTimeout(function () {
+        var l = document.getElementById("loader");
+        if (!window.__viewerLoaded && l && !l.classList.contains("hidden")) {
+          fail(
+            "La carga está tardando demasiado.<br><br>" +
+            "Revisa que el archivo <code>model.glb</code> esté junto al " +
+            "<code>index.html</code> y que tengas conexión a internet " +
+            "(las librerías 3D se cargan desde <code>cdn.jsdelivr.net</code>)."
+          );
+        }
+      }, 30000);
+    })();
+  </script>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
