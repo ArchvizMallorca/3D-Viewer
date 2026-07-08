@@ -167,7 +167,7 @@ export class UI {
     const tabsEl = this._el("lightboxTabs");
     const stageEl = this._el("lightboxStage");
     const imgEl = this._el("lightboxImg");
-    const zoomBtn = this._el("lbZoom");
+    const zoomRange = this._el("lbZoomRange");
     const closeBtn = this._el("lbClose");
     if (!plans.length || !wrap) return;
     wrap.hidden = false;
@@ -193,23 +193,45 @@ export class UI {
     });
     document.addEventListener("click", (e) => { if (!wrap.contains(e.target)) menu.hidden = true; });
 
-    let zoomed = false;
-    const setZoom = (on) => { zoomed = on; stageEl.classList.toggle("zoomed", on); zoomBtn.textContent = on ? "－" : "＋"; };
+    // Zoom del plano mediante slider (100 % = ajustado a pantalla; hasta 300 %)
+    let zoomFactor = 1, baseW = 0, baseH = 0;
+    const applyZoom = () => {
+      imgEl.style.maxWidth = "none";
+      imgEl.style.maxHeight = "none";
+      imgEl.style.width = (baseW * zoomFactor) + "px";
+      imgEl.style.height = (baseH * zoomFactor) + "px";
+      stageEl.classList.toggle("zoomed", zoomFactor > 1.01);
+    };
+    const fit = () => {
+      const sw = stageEl.clientWidth - 40, sh = stageEl.clientHeight - 40;
+      const nw = imgEl.naturalWidth || 1, nh = imgEl.naturalHeight || 1;
+      const s = Math.min(sw / nw, sh / nh);
+      baseW = nw * s; baseH = nh * s;
+      applyZoom();
+    };
+    imgEl.addEventListener("load", fit);
+    zoomRange?.addEventListener("input", () => {
+      zoomFactor = Number(zoomRange.value) / 100;
+      applyZoom();
+    });
+
     const showPlan = (i) => {
-      imgEl.src = plans[i].url; imgEl.alt = plans[i].label; setZoom(false);
+      if (zoomRange) zoomRange.value = 100;
+      zoomFactor = 1;
+      imgEl.src = plans[i].url; imgEl.alt = plans[i].label;
       [...tabsEl.children].forEach((t, k) => t.classList.toggle("active", k === i));
     };
     const openLB = (i) => { lightbox.hidden = false; showPlan(i); };
-    const closeLB = () => { lightbox.hidden = true; setZoom(false); };
+    const closeLB = () => { lightbox.hidden = true; };
     closeBtn.addEventListener("click", closeLB);
-    zoomBtn.addEventListener("click", () => setZoom(!zoomed));
-    imgEl.addEventListener("click", () => setZoom(!zoomed));
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !lightbox.hidden) closeLB(); });
+    window.addEventListener("resize", () => { if (!lightbox.hidden) fit(); });
 
     // Arrastrar para desplazar cuando el plano está ampliado
     let drag = false, sx = 0, sy = 0, sl = 0, st = 0;
     stageEl.addEventListener("pointerdown", (e) => {
-      if (!zoomed) return; drag = true; sx = e.clientX; sy = e.clientY; sl = stageEl.scrollLeft; st = stageEl.scrollTop;
+      if (zoomFactor <= 1.01) return;
+      drag = true; sx = e.clientX; sy = e.clientY; sl = stageEl.scrollLeft; st = stageEl.scrollTop;
     });
     window.addEventListener("pointermove", (e) => {
       if (!drag) return; stageEl.scrollLeft = sl - (e.clientX - sx); stageEl.scrollTop = st - (e.clientY - sy);

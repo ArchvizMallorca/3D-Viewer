@@ -37,6 +37,14 @@ export class CameraController {
     c.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     this.orbit = c;
 
+    // Rotación automática por inactividad: activa al inicio, se detiene al
+    // interactuar y vuelve tras unos segundos sin tocar nada.
+    this._idleMs = 5000;
+    this._lastInteract = -1e9;         // -> rota desde el arranque
+    this._interacting = false;
+    c.addEventListener("start", () => { this._interacting = true; c.autoRotate = false; });
+    c.addEventListener("end", () => { this._interacting = false; this._lastInteract = performance.now(); });
+
     this._home = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
     this._resetting = false;
 
@@ -91,6 +99,7 @@ export class CameraController {
     if (this.mode === "person") this.exitPerson();
     this._resetting = true;
     this.orbit.autoRotate = false;
+    this._lastInteract = performance.now();   // espera inactividad antes de re-rotar
   }
 
   /** Cambia la distancia focal (mm) → varía el "zoom" / campo de visión. */
@@ -158,6 +167,8 @@ export class CameraController {
     this.camera.position.copy(this._orbitSaved.pos);
     this.orbit.target.copy(this._orbitSaved.target);
     this.orbit.enabled = true;
+    this._interacting = false;
+    this._lastInteract = performance.now();   // no reanudar la rotación de golpe
     this.orbit.update();
     this.onModeChange && this.onModeChange("orbit");
   }
@@ -213,6 +224,12 @@ export class CameraController {
       if (e.code === "Space") this._space = false;
       if (e.key.toLowerCase() === "c") this._ctrlDown = false;
     });
+
+    // Si la ventana pierde el foco (Alt+Tab, Sticky Keys de Shift, etc.) se
+    // pueden quedar teclas "pegadas" y seguir corriendo: las soltamos todas.
+    const releaseAll = () => { this._keys.clear(); this._space = false; this._ctrlDown = false; };
+    window.addEventListener("blur", releaseAll);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) releaseAll(); });
   }
 
   /* ---------- Update por frame ---------- */
@@ -230,6 +247,11 @@ export class CameraController {
         this.orbit.target.copy(this._home.target);
         this._resetting = false;
       }
+    }
+    // Reanuda la rotación automática tras 5 s de inactividad
+    if (this.config.autoRotate && !this._interacting && !this._resetting &&
+        performance.now() - this._lastInteract > this._idleMs) {
+      this.orbit.autoRotate = true;
     }
     this.orbit.update();
   }

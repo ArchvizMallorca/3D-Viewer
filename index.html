@@ -96,12 +96,17 @@
     <div class="lightbox-bar">
       <div class="lightbox-tabs" id="lightboxTabs"></div>
       <div class="lightbox-actions">
-        <button class="lb-btn" id="lbZoom" title="Zoom">＋</button>
         <button class="lb-btn" id="lbClose" title="Cerrar" aria-label="Cerrar">✕</button>
       </div>
     </div>
     <div class="lightbox-stage" id="lightboxStage">
       <img class="lightbox-img" id="lightboxImg" alt="Plano" draggable="false" />
+    </div>
+    <!-- Barra para agrandar / reducir el plano -->
+    <div class="lb-zoombar" id="lbZoombar">
+      <span class="focal-ico" aria-hidden="true">−</span>
+      <input type="range" id="lbZoomRange" min="100" max="300" step="1" value="100" aria-label="Tamaño del plano" />
+      <span class="focal-ico" aria-hidden="true">+</span>
     </div>
   </div>
 

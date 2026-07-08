@@ -272,10 +272,48 @@ html, body {
   transition: max-width 0.25s ease, max-height 0.25s ease;
 }
 .lightbox-stage.zoomed { align-items: flex-start; justify-content: flex-start; cursor: grab; }
-.lightbox-stage.zoomed .lightbox-img {
-  max-width: none;
-  max-height: none;
-  width: 190%;
+
+/* Barra de tamaño del plano (agrandar / reducir) */
+.lb-zoombar {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(18px, 4vh, 30px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-radius: 100px;
+  background: var(--panel);
+  border: 1px solid var(--panel-brd);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.lb-zoombar input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: clamp(140px, 26vw, 240px);
+  height: 3px;
+  border-radius: 3px;
+  background: var(--line);
+  outline: none;
+  cursor: pointer;
+}
+.lb-zoombar input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid #fff;
+  box-shadow: var(--shadow);
+}
+.lb-zoombar input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid #fff;
 }
 
 /* ---------- Footer (centrado abajo) ---------- */
