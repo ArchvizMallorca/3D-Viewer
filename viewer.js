@@ -21,7 +21,7 @@ export const CONFIG = {
   subtitle: "Fase conceptual · Volumetría",
   background: 0xeceae6,
   autoRotate: true,
-  autoRotateSpeed: 0.6,
+  autoRotateSpeed: 0.4,
 
   // Planos (PNG con transparencia)
   plans: [
