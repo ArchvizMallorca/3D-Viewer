@@ -10,6 +10,7 @@ import { loadModel } from "./modelLoader.js";
 import { CameraController } from "./cameraController.js";
 import { UI } from "./ui.js";
 import { Hotspots } from "./hotspots.js";
+import { Sun } from "./sun.js";
 
 /* ---------------------------------------------------------
    CONFIGURACIÓN CENTRAL — edita aquí por proyecto
@@ -33,6 +34,9 @@ export const CONFIG = {
 
   // Medición — 1 unidad = 1 m (100 = cm, 1000 = mm)
   measure: { unitsPerMeter: 1, unit: "m", decimals: 2 },
+
+  // Sol: time 0=amanece · 0.5=mediodía · 1=atardece · orientation en grados
+  sun: { time: 0.62, orientation: 30, peakElevation: 72 },
 
   /* Hotspots. Crea uno con Alt+clic sobre el modelo (mira la consola).
      type:"enter" inicia el modo persona ahí; start:true lo usa el botón. Ej:
@@ -67,19 +71,15 @@ viewerEl.appendChild(renderer.domElement);
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d4cc, 0.9));
+// Luz ambiental suave (el sol es la fuente principal y proyecta las sombras)
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d4cc, 0.55));
 
-const key = new THREE.DirectionalLight(0xffffff, 2.2);
-key.position.set(6, 12, 8);
-key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
-key.shadow.bias = -0.0005;
-key.shadow.normalBias = 0.02;
-scene.add(key);
-
-const fill = new THREE.DirectionalLight(0xffffff, 0.6);
+const fill = new THREE.DirectionalLight(0xffffff, 0.25);
 fill.position.set(-8, 5, -6);
 scene.add(fill);
+
+// Sol (luz direccional con sombra) — controlable desde la UI
+const sun = new Sun(scene, CONFIG);
 
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(4000, 4000),
@@ -107,7 +107,7 @@ const getMeshes = () => meshes;
 const getSize = () => worldSize;
 
 const ui = new UI({
-  cameraController: cameraCtl, scene, camera,
+  cameraController: cameraCtl, scene, camera, sun,
   dom: renderer.domElement, getMeshes, getSize, config: CONFIG,
 });
 
@@ -141,6 +141,7 @@ loadModel(
   meshes = m;
   worldSize.copy(size);
   cameraCtl.frame(box);
+  sun.frame(box);
   window.__viewerLoaded = true;
   loaderEl.classList.add("hidden");
 }).catch((err) => {

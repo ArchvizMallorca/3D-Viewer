@@ -59,8 +59,24 @@
     </div>
   </div>
 
+  <!-- Panel del sol -->
+  <div class="sun-panel" id="sunPanel" hidden>
+    <div class="sun-row">
+      <label for="sunTime">Hora del día</label>
+      <input type="range" id="sunTime" min="0" max="100" value="62" />
+    </div>
+    <div class="sun-row">
+      <label for="sunOrient">Orientación</label>
+      <input type="range" id="sunOrient" min="0" max="360" value="30" />
+    </div>
+  </div>
+
   <!-- Controles -->
   <div class="ui-controls">
+    <button class="btn" id="sunBtn" title="Sol y sombras">
+      <span class="btn-icon" aria-hidden="true">☀</span>
+      <span class="btn-label">Sol</span>
+    </button>
     <button class="btn" id="measureBtn" title="Medir distancia entre dos puntos">
       <span class="btn-icon" aria-hidden="true">↔</span>
       <span class="btn-label">Medir</span>

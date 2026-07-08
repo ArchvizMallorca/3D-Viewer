@@ -23,6 +23,7 @@ export class UI {
     this.cam = o.cameraController;
     this.scene = o.scene;
     this.camera = o.camera;
+    this.sun = o.sun;
     this.dom = o.dom;
     this.getMeshes = o.getMeshes;
     this.getSize = o.getSize;
@@ -34,6 +35,7 @@ export class UI {
     this._setupPlans();
     this._setupMeasure();
     this._setupPersonDom();
+    this._setupSun();
 
     // La cámara avisa cuando cambia de modo → actualizamos el DOM
     this.cam.onModeChange = (m) => this._setMode(m);
@@ -49,6 +51,33 @@ export class UI {
     this._el("resetView")?.addEventListener("click", () => this.cam.reset());
     this._el("personBtn")?.addEventListener("click", () => this.cam.togglePerson());
     this._el("measureBtn")?.addEventListener("click", () => this._toggleMeasure());
+  }
+
+  /* ---------------- Sol ---------------- */
+  _setupSun() {
+    const btn = this._el("sunBtn");
+    const panel = this._el("sunPanel");
+    const time = this._el("sunTime");
+    const orient = this._el("sunOrient");
+    if (!btn || !panel || !this.sun) return;
+
+    const st = this.sun.getState();
+    if (time) time.value = Math.round(st.time * 100);
+    if (orient) orient.value = Math.round(st.orientation);
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      panel.hidden = !panel.hidden;
+      btn.classList.toggle("active", !panel.hidden);
+    });
+    document.addEventListener("click", (e) => {
+      if (panel.hidden) return;
+      if (!panel.contains(e.target) && !btn.contains(e.target)) {
+        panel.hidden = true; btn.classList.remove("active");
+      }
+    });
+    time?.addEventListener("input", () => this.sun.setTime(time.value / 100));
+    orient?.addEventListener("input", () => this.sun.setOrientation(Number(orient.value)));
   }
 
   /* ---------------- Modo persona (DOM) ---------------- */
