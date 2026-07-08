@@ -201,15 +201,25 @@ export class UI {
     window.addEventListener("pointerup", () => { drag = false; });
   }
 
-  /* ---------------- Medir ---------------- */
+  /* ---------------- Medir (con snap a vértices) ---------------- */
   _setupMeasure() {
+    // Indicador de snap: pequeño diamante que resalta el vértice bajo el cursor
+    const indicator = new THREE.Mesh(
+      new THREE.OctahedronGeometry(1, 0),
+      new THREE.MeshBasicMaterial({ color: 0x2e7d5b, depthTest: false, transparent: true, opacity: 0.95 })
+    );
+    indicator.renderOrder = 999;
+    indicator.visible = false;
+    this.scene.add(indicator);
+
     this._m = {
       active: false,
       points: [],
+      markers: [],                 // esferas de los puntos colocados
       group: new THREE.Group(),
+      indicator,
       raycaster: new THREE.Raycaster(),
       ndc: new THREE.Vector2(),
-      markerR: 0.05,
       mid: new THREE.Vector3(),
       hint: this._el("measureHint"),
       hintText: this._el("measureHintText"),
@@ -218,6 +228,15 @@ export class UI {
     this.scene.add(this._m.group);
     this._el("measureClear")?.addEventListener("click", () => this._clearMeasure());
 
+    // Hover: mueve el indicador al vértice más cercano
+    this.dom.addEventListener("pointermove", (e) => {
+      if (!this._m.active || this.cam.mode === "person") { this._m.indicator.visible = false; return; }
+      const snap = this._snapAt(e.clientX, e.clientY);
+      if (snap) { this._m.indicator.visible = true; this._m.indicator.position.copy(snap); }
+      else this._m.indicator.visible = false;
+    });
+
+    // Clic (sin arrastrar) → coloca el punto ya "snapeado"
     let downX = 0, downY = 0, downT = 0;
     this.dom.addEventListener("pointerdown", (e) => { downX = e.clientX; downY = e.clientY; downT = performance.now(); });
     this.dom.addEventListener("pointerup", (e) => {
@@ -225,12 +244,33 @@ export class UI {
       if (e.altKey) return;   // Alt = picker de hotspots
       const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
       if (moved > 6 || performance.now() - downT > 500) return;
-      this._m.ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
-      this._m.ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
-      this._m.raycaster.setFromCamera(this._m.ndc, this.camera);
-      const hits = this._m.raycaster.intersectObjects(this.getMeshes(), true);
-      if (hits.length) this._addMeasurePoint(hits[0].point);
+      const snap = this._snapAt(e.clientX, e.clientY);
+      if (snap) this._addMeasurePoint(snap);
     });
+  }
+
+  /** Devuelve el vértice más cercano al punto tocado, o null. */
+  _snapAt(cx, cy) {
+    const m = this._m;
+    m.ndc.x = (cx / window.innerWidth) * 2 - 1;
+    m.ndc.y = -(cy / window.innerHeight) * 2 + 1;
+    m.raycaster.setFromCamera(m.ndc, this.camera);
+    const hits = m.raycaster.intersectObjects(this.getMeshes(), true);
+    if (!hits.length) return null;
+    const hit = hits[0];
+    const geom = hit.object.geometry, face = hit.face;
+    if (!geom || !face || !geom.attributes.position) return hit.point.clone();
+
+    const pos = geom.attributes.position;
+    const cands = [face.a, face.b, face.c].map((i) =>
+      hit.object.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i)));
+    // vértice de la cara más cercano al punto exacto tocado
+    let best = cands[0], bd = best.distanceToSquared(hit.point);
+    for (let i = 1; i < 3; i++) {
+      const d = cands[i].distanceToSquared(hit.point);
+      if (d < bd) { bd = d; best = cands[i]; }
+    }
+    return best;
   }
 
   _toggleMeasure() { this._m.active ? this._disableMeasure() : this._enableMeasure(); }
@@ -239,8 +279,6 @@ export class UI {
     this._m.active = true;
     this._el("measureBtn")?.classList.add("active");
     this._m.hint.hidden = false;
-    const s = this.getSize();
-    this._m.markerR = (Math.max(s.x, s.y, s.z) || 10) * 0.006;
     this._clearMeasure();
   }
   _disableMeasure() {
@@ -249,29 +287,39 @@ export class UI {
     this._el("measureBtn")?.classList.remove("active");
     this._m.hint.hidden = true;
     this._m.label.hidden = true;
+    this._m.indicator.visible = false;
     this._clearMeasure();
   }
   _clearMeasure() {
     const g = this._m.group;
     this._m.points.length = 0;
+    this._m.markers.length = 0;
     while (g.children.length) { const c = g.children.pop(); c.geometry?.dispose?.(); c.material?.dispose?.(); g.remove(c); }
     this._m.label.hidden = true;
-    if (this._m.hintText) this._m.hintText.textContent = "Toca el primer punto sobre el modelo";
+    if (this._m.hintText) this._m.hintText.textContent = "Apunta a una esquina y toca el primer punto";
   }
   _addMeasurePoint(p) {
     const m = this._m;
     if (m.points.length === 2) this._clearMeasure();
     m.points.push(p.clone());
+
+    // Marcador pequeño (radio base 1; se escala a tamaño de pantalla en update)
     const dot = new THREE.Mesh(
-      new THREE.SphereGeometry(m.markerR, 20, 20),
-      new THREE.MeshBasicMaterial({ color: 0x1c1b19 })
+      new THREE.SphereGeometry(1, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0x1c1b19, depthTest: false })
     );
-    dot.position.copy(p); m.group.add(dot);
+    dot.renderOrder = 998;
+    dot.position.copy(p);
+    m.group.add(dot);
+    m.markers.push(dot);
+
     if (m.points.length === 1) {
-      m.hintText.textContent = "Toca el segundo punto";
+      m.hintText.textContent = "Apunta a otra esquina y toca el segundo punto";
     } else {
       const g = new THREE.BufferGeometry().setFromPoints(m.points);
-      m.group.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0x1c1b19 })));
+      const line = new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0x1c1b19, depthTest: false }));
+      line.renderOrder = 997;
+      m.group.add(line);
       const raw = m.points[0].distanceTo(m.points[1]);
       const meters = raw / (this.config.measure.unitsPerMeter || 1);
       m.label.innerHTML = `${meters.toFixed(this.config.measure.decimals)} ${this.config.measure.unit}<small>${raw.toFixed(2)} u</small>`;
@@ -280,13 +328,28 @@ export class UI {
     }
   }
 
-  /* ---------------- Update por frame (etiqueta de medida) ---------------- */
+  /** Radio en mundo para que un objeto se vea con ~pixels px a cualquier distancia. */
+  _screenScale(pos, pixels) {
+    const d = this.camera.position.distanceTo(pos);
+    const f = this.camera.fov * Math.PI / 180;
+    return pixels * d * Math.tan(f / 2) / window.innerHeight;
+  }
+
+  /* ---------------- Update por frame ---------------- */
   update() {
     const m = this._m;
-    if (!m || m.points.length !== 2 || m.label.hidden) return;
-    m.mid.addVectors(m.points[0], m.points[1]).multiplyScalar(0.5).project(this.camera);
-    const x = (m.mid.x * 0.5 + 0.5) * window.innerWidth;
-    const y = (-m.mid.y * 0.5 + 0.5) * window.innerHeight;
-    m.label.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+    if (!m) return;
+
+    // Marcadores e indicador: tamaño constante en pantalla
+    for (const dot of m.markers) dot.scale.setScalar(this._screenScale(dot.position, 5));
+    if (m.indicator.visible) m.indicator.scale.setScalar(this._screenScale(m.indicator.position, 7));
+
+    // Etiqueta de distancia en el punto medio
+    if (m.points.length === 2 && !m.label.hidden) {
+      m.mid.addVectors(m.points[0], m.points[1]).multiplyScalar(0.5).project(this.camera);
+      const x = (m.mid.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-m.mid.y * 0.5 + 0.5) * window.innerHeight;
+      m.label.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+    }
   }
 }
