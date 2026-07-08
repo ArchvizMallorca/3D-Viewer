@@ -36,6 +36,7 @@ export class UI {
     this._setupMeasure();
     this._setupPersonDom();
     this._setupSun();
+    this._setupFocal();
 
     // La cámara avisa cuando cambia de modo → actualizamos el DOM
     this.cam.onModeChange = (m) => this._setMode(m);
@@ -51,6 +52,21 @@ export class UI {
     this._el("resetView")?.addEventListener("click", () => this.cam.reset());
     this._el("personBtn")?.addEventListener("click", () => this.cam.togglePerson());
     this._el("measureBtn")?.addEventListener("click", () => this._toggleMeasure());
+    this._el("personMeasureBtn")?.addEventListener("click", () => this._toggleMeasure());
+  }
+
+  /* ---------------- Distancia focal (zoom 18–36 mm) ---------------- */
+  _setupFocal() {
+    const range = this._el("focalRange");
+    const lbl = this._el("focalLbl");
+    if (!range) return;
+    const apply = () => {
+      const mm = Number(range.value);
+      this.cam.setFocalLength(mm);
+      if (lbl) lbl.textContent = mm + " mm";
+    };
+    range.addEventListener("input", apply);
+    apply();   // aplica el valor inicial (24 mm)
   }
 
   /* ---------------- Sol ---------------- */
@@ -128,8 +144,10 @@ export class UI {
     this._toggle("personHint", person);
     this._toggle("crosshair", person && !this._isTouch());
     this._toggle("personTouch", person && this._isTouch());
+    // La medición sigue disponible en modo persona (botón propio)
+    this._toggle("personMeasureBtn", person);
+    this._el("personMeasureBtn")?.classList.toggle("active", this._m?.active);
     if (person) {
-      this._disableMeasure();
       const hint = this._el("personHint");
       setTimeout(() => hint && (hint.hidden = true), 6000);
     }
@@ -228,9 +246,9 @@ export class UI {
     this.scene.add(this._m.group);
     this._el("measureClear")?.addEventListener("click", () => this._clearMeasure());
 
-    // Hover: mueve el indicador al vértice más cercano
+    // Hover: mueve el indicador al vértice más cercano (también en modo persona)
     this.dom.addEventListener("pointermove", (e) => {
-      if (!this._m.active || this.cam.mode === "person") { this._m.indicator.visible = false; return; }
+      if (!this._m.active) { this._m.indicator.visible = false; return; }
       const snap = this._snapAt(e.clientX, e.clientY);
       if (snap) { this._m.indicator.visible = true; this._m.indicator.position.copy(snap); }
       else this._m.indicator.visible = false;
@@ -240,7 +258,7 @@ export class UI {
     let downX = 0, downY = 0, downT = 0;
     this.dom.addEventListener("pointerdown", (e) => { downX = e.clientX; downY = e.clientY; downT = performance.now(); });
     this.dom.addEventListener("pointerup", (e) => {
-      if (!this._m.active || this.cam.mode === "person") return;
+      if (!this._m.active) return;
       if (e.altKey) return;   // Alt = picker de hotspots
       const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
       if (moved > 6 || performance.now() - downT > 500) return;
@@ -274,20 +292,24 @@ export class UI {
   }
 
   _toggleMeasure() { this._m.active ? this._disableMeasure() : this._enableMeasure(); }
+  _syncMeasureBtns() {
+    this._el("measureBtn")?.classList.toggle("active", this._m.active);
+    this._el("personMeasureBtn")?.classList.toggle("active", this._m.active);
+  }
   _enableMeasure() {
-    if (this.cam.mode === "person") this.cam.exitPerson();
+    // Funciona igual en vista orbital y en modo persona
     this._m.active = true;
-    this._el("measureBtn")?.classList.add("active");
     this._m.hint.hidden = false;
+    this._syncMeasureBtns();
     this._clearMeasure();
   }
   _disableMeasure() {
     if (!this._m) return;
     this._m.active = false;
-    this._el("measureBtn")?.classList.remove("active");
     this._m.hint.hidden = true;
     this._m.label.hidden = true;
     this._m.indicator.visible = false;
+    this._syncMeasureBtns();
     this._clearMeasure();
   }
   _clearMeasure() {

@@ -371,6 +371,71 @@ html, body {
 }
 .btn.active .btn-icon { color: #fff; }
 
+/* ---------- Barra de distancia focal (zoom sutil) ---------- */
+.focal {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(42px, 7vh, 60px);
+  transform: translateX(-50%);
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 6px 20px rgba(28, 27, 25, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0.7;
+  transition: opacity 0.25s ease;
+}
+.focal:hover { opacity: 1; }
+.focal-ico { font-size: 14px; color: var(--ink-soft); user-select: none; }
+.focal-lbl {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  min-width: 42px;
+  text-align: right;
+}
+.focal input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: clamp(120px, 22vw, 200px);
+  height: 3px;
+  border-radius: 3px;
+  background: var(--line);
+  outline: none;
+  cursor: pointer;
+}
+.focal input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid #fff;
+  box-shadow: var(--shadow);
+}
+.focal input[type="range"]::-moz-range-thumb {
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid #fff;
+}
+/* Se oculta durante el recorrido en primera persona */
+body.person-active .focal { display: none; }
+
+/* Botón "Medir" dentro del modo persona (arriba a la izquierda) */
+.person-measure {
+  position: fixed;
+  top: clamp(16px, 4vw, 28px);
+  left: clamp(16px, 4vw, 28px);
+  z-index: 21;
+}
+
 /* ---------- Panel del sol ---------- */
 .sun-panel {
   position: fixed;

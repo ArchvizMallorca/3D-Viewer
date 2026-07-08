@@ -93,6 +93,12 @@ export class CameraController {
     this.orbit.autoRotate = false;
   }
 
+  /** Cambia la distancia focal (mm) → varía el "zoom" / campo de visión. */
+  setFocalLength(mm) {
+    this.camera.setFocalLength(mm);
+    this.camera.updateProjectionMatrix();
+  }
+
   /* ---------- Modo persona ---------- */
   _autoParams() {
     const p = this.config.person || {};

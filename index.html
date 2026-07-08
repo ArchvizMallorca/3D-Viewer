@@ -140,6 +140,20 @@
     <span class="btn-label">Salir</span>
   </button>
 
+  <!-- Medir dentro del modo persona -->
+  <button class="btn person-measure" id="personMeasureBtn" hidden>
+    <span class="btn-icon" aria-hidden="true">↔</span>
+    <span class="btn-label">Medir</span>
+  </button>
+
+  <!-- Barra sutil de distancia focal (zoom 18–36 mm) -->
+  <div class="focal" id="focal">
+    <span class="focal-ico" aria-hidden="true">−</span>
+    <input type="range" id="focalRange" min="18" max="36" step="1" value="24" aria-label="Distancia focal" />
+    <span class="focal-ico" aria-hidden="true">+</span>
+    <span class="focal-lbl" id="focalLbl">24 mm</span>
+  </div>
+
   <!-- Herramienta de medir -->
   <div class="measure-hint" id="measureHint" hidden>
     <span id="measureHintText">Toca el primer punto sobre el modelo</span>
