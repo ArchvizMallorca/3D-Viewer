@@ -42,6 +42,10 @@ export class Hotspots {
 
   /** Añade un hotspot { type, label, position:[x,y,z], yaw } */
   add(h) {
+    // Los hotspots de inicio (start) NO muestran marcador: solo definen el
+    // punto donde arranca el modo persona (lo usa el botón "Modo persona").
+    if (h.start) return;
+
     const el = document.createElement("button");
     el.className = "hotspot" + (h.type === "enter" ? " hotspot-enter" : "");
     el.innerHTML = `<span class="hotspot-dot"></span>` +

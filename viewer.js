@@ -42,7 +42,8 @@ export const CONFIG = {
      type:"enter" inicia el modo persona ahí; start:true lo usa el botón. Ej:
      { type:"enter", start:true, label:"Entrar", position:[3.2,1.6,-4.0], yaw:0 } */
   hotspots: [
-    { type: "enter", start: true, label: "Entrar", position: [10.58, 3.62, -31.88], yaw: 0 },
+    // Punto de inicio del modo persona (invisible; lo usa el botón "Modo persona")
+    { type: "enter", start: true, label: "Entrar", position: [10.58, 5.12, -31.88], yaw: 0.087 },
   ],
 };
 
