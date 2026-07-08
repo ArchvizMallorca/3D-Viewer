@@ -48,8 +48,10 @@ export function loadModel(url, onProgress) {
       (gltf) => {
         const model = gltf.scene;
         const meshes = [];
+        const cameras = [];      // cámaras de 3ds Max exportadas (CAM_START, etc.)
 
         model.traverse((o) => {
+          if (o.isCamera) { cameras.push(o); return; }
           if (!o.isMesh) return;
           o.castShadow = true;
           o.receiveShadow = true;
@@ -61,13 +63,14 @@ export function loadModel(url, onProgress) {
         // Apoyar el modelo sobre el suelo (y = 0)
         const pre = new THREE.Box3().setFromObject(model);
         model.position.y -= pre.min.y;
+        model.updateMatrixWorld(true);   // para leer bien la posición de las cámaras
 
         // Bounds definitivos en coordenadas de mundo
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
-        resolve({ model, meshes, box, size, center });
+        resolve({ model, meshes, cameras, box, size, center });
       },
       onProgress,
       reject

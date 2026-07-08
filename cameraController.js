@@ -135,7 +135,7 @@ export class CameraController {
       this.spawnFromView();
     this.camera.position.copy(s.position);
     this._yaw = s.yaw || 0;
-    this._pitch = 0;
+    this._pitch = s.pitch || 0;
     this.camera.rotation.order = "YXZ";
     this._applyLook();
 

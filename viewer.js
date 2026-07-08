@@ -29,8 +29,9 @@ export const CONFIG = {
     { label: "Alzado",      url: "planos/alzado.png" },
   ],
 
-  // Modo persona — el modelo está en METROS
-  person: { eyeHeight: 1.6, walkSpeed: 3.0, runFactor: 2.2 },
+  // Modo persona — el modelo está en METROS.
+  // startCamera: nombre de una cámara de 3ds Max usada como punto de inicio.
+  person: { eyeHeight: 1.6, walkSpeed: 3.0, runFactor: 2.2, startCamera: "CAM_START" },
 
   // Medición — 1 unidad = 1 m (100 = cm, 1000 = mm)
   measure: { unitsPerMeter: 1, unit: "m", decimals: 2 },
@@ -139,12 +140,28 @@ loadModel(
       loaderText.textContent = "Cargando modelo… " + pct + "%";
     }
   }
-).then(({ model, meshes: m, box, size }) => {
+).then(({ model, meshes: m, cameras, box, size }) => {
   scene.add(model);
+  model.updateMatrixWorld(true);
   meshes = m;
   worldSize.copy(size);
   cameraCtl.frame(box);
   sun.frame(box);
+
+  // Punto de inicio del modo persona desde una cámara de 3ds Max (CAM_START)
+  const camName = CONFIG.person?.startCamera || "CAM_START";
+  const startCam = (cameras || []).find((c) => c.name === camName);
+  if (startCam) {
+    const pos = startCam.getWorldPosition(new THREE.Vector3());
+    const dir = startCam.getWorldDirection(new THREE.Vector3());
+    const yaw = Math.atan2(-dir.x, -dir.z);
+    const pitch = Math.asin(Math.max(-1, Math.min(1, dir.y)));
+    cameraCtl.startSpawnProvider = () => ({ position: pos.clone(), yaw, pitch });
+    console.log(`Modo persona: inicio desde la cámara "${camName}".`);
+  } else {
+    console.log(`No se encontró la cámara "${camName}" en el GLB (se usa el hotspot o la vista actual).`);
+  }
+
   window.__viewerLoaded = true;
   loaderEl.classList.add("hidden");
 }).catch((err) => {
