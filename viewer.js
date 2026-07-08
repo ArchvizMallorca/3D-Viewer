@@ -21,7 +21,7 @@ export const CONFIG = {
   subtitle: "Fase conceptual · Volumetría",
   background: 0xeceae6,
   autoRotate: true,
-  autoRotateSpeed: 0.4,
+  autoRotateSpeed: 0.6,
 
   // Planos (PNG con transparencia)
   plans: [
@@ -41,7 +41,9 @@ export const CONFIG = {
   /* Hotspots. Crea uno con Alt+clic sobre el modelo (mira la consola).
      type:"enter" inicia el modo persona ahí; start:true lo usa el botón. Ej:
      { type:"enter", start:true, label:"Entrar", position:[3.2,1.6,-4.0], yaw:0 } */
-  hotspots: [],
+  hotspots: [
+    { type: "enter", start: true, label: "Entrar", position: [10.58, 3.62, -31.88], yaw: 0 },
+  ],
 };
 
 /* ---------------------------------------------------------
