@@ -425,16 +425,7 @@ html, body {
   background: var(--ink);
   border: 2px solid #fff;
 }
-/* Se oculta durante el recorrido en primera persona */
-body.person-active .focal { display: none; }
-
-/* Botón "Medir" dentro del modo persona (arriba a la izquierda) */
-.person-measure {
-  position: fixed;
-  top: clamp(16px, 4vw, 28px);
-  left: clamp(16px, 4vw, 28px);
-  z-index: 21;
-}
+/* La barra focal permanece visible también en primera persona */
 
 /* ---------- Panel del sol ---------- */
 .sun-panel {
@@ -486,7 +477,7 @@ body.person-active .focal { display: none; }
   background: var(--ink);
   border: 2px solid #fff;
 }
-body.person-active .sun-panel { display: none; }
+/* El panel del sol también es accesible en primera persona */
 
 /* ---------- Hotspots ---------- */
 .hotspot {
@@ -559,10 +550,9 @@ body.person-active .sun-panel { display: none; }
   z-index: 21;
 }
 
-/* Oculta la UI orbital mientras recorres en primera persona */
+/* En primera persona mantenemos toda la botonera abajo (Sol, Medir, focal,
+   planos, etc.). Solo ocultamos lo no interactivo: título, pistas y footer. */
 body.person-active .ui-top,
-body.person-active .ui-controls,
-body.person-active .plans,
 body.person-active .hint,
 body.person-active .hotspots-layer,
 body.person-active .ui-bottom { display: none; }
@@ -573,7 +563,7 @@ body.person-active .person-touch {
   display: flex;
   position: fixed;
   inset: auto 0 0 0;
-  bottom: clamp(20px, 6vh, 40px);
+  bottom: clamp(84px, 16vh, 120px);   /* por encima de la botonera inferior */
   z-index: 20;
   justify-content: space-between;
   align-items: flex-end;

@@ -144,9 +144,7 @@ export class UI {
     this._toggle("personHint", person);
     this._toggle("crosshair", person && !this._isTouch());
     this._toggle("personTouch", person && this._isTouch());
-    // La medición sigue disponible en modo persona (botón propio)
-    this._toggle("personMeasureBtn", person);
-    this._el("personMeasureBtn")?.classList.toggle("active", this._m?.active);
+    // La botonera inferior (incluido Medir) permanece visible en modo persona
     if (person) {
       const hint = this._el("personHint");
       setTimeout(() => hint && (hint.hidden = true), 6000);
