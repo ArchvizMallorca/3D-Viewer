@@ -50,6 +50,8 @@ export class CameraController {
     this._joy = { x: 0, y: 0 };
     this._eyeH = 1.6;
     this._speed = 3;
+    this._lookSens = 0.0024;           // sensibilidad de mirada (rad por píxel)
+    this._maxPitch = 1.45;             // ~83°, evita el "flip" en vertical
     this._orbitSaved = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
     this._fwd = new THREE.Vector3();
     this._right = new THREE.Vector3();
@@ -137,7 +139,6 @@ export class CameraController {
     this.camera.rotation.order = "YXZ";
     this._applyLook();
 
-    if (!this._isTouch() && this.dom.requestPointerLock) this.dom.requestPointerLock();
     this.onModeChange && this.onModeChange("person");
   }
 
@@ -166,25 +167,32 @@ export class CameraController {
   }
 
   _applyLook() {
-    this._pitch = Math.max(-1.4, Math.min(1.4, this._pitch));
+    this._pitch = Math.max(-this._maxPitch, Math.min(this._maxPitch, this._pitch));
     this.camera.rotation.set(this._pitch, this._yaw, 0, "YXZ");
   }
 
   _bindPersonInput() {
     const dom = this.dom;
 
-    // Ratón (pointer lock)
-    dom.addEventListener("click", () => {
-      if (this.mode === "person" && !this._isTouch() &&
-          document.pointerLockElement !== dom) dom.requestPointerLock?.();
-    });
-    document.addEventListener("mousemove", (e) => {
+    // Mirar arrastrando (ratón y dedo, unificado con Pointer Events).
+    // Al ir por delta de arrastre, la mirada queda alineada con el cursor.
+    let dragging = false, px = 0, py = 0;
+    dom.addEventListener("pointerdown", (e) => {
       if (this.mode !== "person") return;
-      if (document.pointerLockElement !== dom) return;
-      this._yaw -= e.movementX * 0.0022;
-      this._pitch -= e.movementY * 0.0022;
+      dragging = true; px = e.clientX; py = e.clientY;
+      dom.setPointerCapture && dom.setPointerCapture(e.pointerId);
+    });
+    dom.addEventListener("pointermove", (e) => {
+      if (this.mode !== "person" || !dragging) return;
+      this._yaw -= (e.clientX - px) * this._lookSens;
+      this._pitch -= (e.clientY - py) * this._lookSens;
+      px = e.clientX; py = e.clientY;
       this._applyLook();
     });
+    const stop = () => { dragging = false; };
+    dom.addEventListener("pointerup", stop);
+    dom.addEventListener("pointercancel", stop);
+    dom.addEventListener("pointerleave", stop);
 
     // Teclado
     document.addEventListener("keydown", (e) => {
@@ -198,26 +206,6 @@ export class CameraController {
       this._keys.delete(e.key.toLowerCase());
       if (e.code === "Space") this._space = false;
       if (e.key.toLowerCase() === "c") this._ctrlDown = false;
-    });
-
-    // Mirar con el dedo (arrastrar en el canvas)
-    let lookId = null, lx = 0, ly = 0;
-    dom.addEventListener("touchstart", (e) => {
-      if (this.mode !== "person") return;
-      const t = e.changedTouches[0];
-      lookId = t.identifier; lx = t.clientX; ly = t.clientY;
-    }, { passive: true });
-    dom.addEventListener("touchmove", (e) => {
-      if (this.mode !== "person" || lookId === null) return;
-      for (const t of e.changedTouches) {
-        if (t.identifier !== lookId) continue;
-        this._yaw -= (t.clientX - lx) * 0.005;
-        this._pitch -= (t.clientY - ly) * 0.005;
-        lx = t.clientX; ly = t.clientY; this._applyLook();
-      }
-    }, { passive: true });
-    dom.addEventListener("touchend", (e) => {
-      for (const t of e.changedTouches) if (t.identifier === lookId) lookId = null;
     });
   }
 
@@ -241,9 +229,11 @@ export class CameraController {
   }
 
   _updatePerson(dt) {
-    this.camera.getWorldDirection(this._fwd);
-    this._fwd.y = 0; this._fwd.normalize();
-    this._right.crossVectors(this._fwd, this._UP).normalize();
+    // Dirección horizontal a partir del yaw (independiente del pitch):
+    // así el desplazamiento no falla al mirar del todo arriba/abajo.
+    const s = Math.sin(this._yaw), c = Math.cos(this._yaw);
+    this._fwd.set(-s, 0, -c);
+    this._right.set(c, 0, -s);
 
     const run = this._keys.has("shift") ? (this.config.person?.runFactor || 2.2) : 1;
     const step = this._speed * run * dt;

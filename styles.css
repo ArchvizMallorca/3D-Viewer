@@ -275,11 +275,12 @@ html, body {
   width: 190%;
 }
 
-/* ---------- Footer ---------- */
+/* ---------- Footer (centrado abajo) ---------- */
 .ui-bottom {
   position: fixed;
-  left: clamp(20px, 5vw, 44px);
-  bottom: clamp(20px, 5vh, 34px);
+  left: 50%;
+  bottom: clamp(14px, 3vh, 22px);
+  transform: translateX(-50%);
   z-index: 10;
   font-size: 11px;
   letter-spacing: 0.16em;
