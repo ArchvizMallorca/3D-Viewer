@@ -154,6 +154,9 @@ html, body {
   gap: 10px;
 }
 .plans-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
   width: 232px;
   padding: 8px;
   background: var(--panel);
@@ -716,18 +719,32 @@ body.person-active .person-touch {
   body.person-active .person-touch { bottom: clamp(150px, 26vh, 210px); }
 }
 
-/* ---------- Teléfono: botones solo icono, márgenes ajustados ---------- */
+/* ---------- Teléfono: una fila de iconos centrada + barra focal debajo ---------- */
 @media (max-width: 640px) {
   .btn:not(.person-exit) .btn-label { display: none; }  /* "Salir" conserva texto */
   .btn { padding: 11px 13px; }
   .btn-icon { font-size: 16px; }
-  .plans { left: 12px; }
-  .ui-controls { right: 12px; gap: 8px; }
+
+  /* Planos deja de estar fijo y se integra como primer icono de la botonera */
+  .plans { position: relative; left: auto; bottom: auto; z-index: auto; }
+
+  /* Botonera centrada en una sola fila */
+  .ui-controls {
+    left: 50%; right: auto;
+    transform: translateX(-50%);
+    justify-content: center;
+    flex-wrap: nowrap;
+    bottom: 60px;
+    gap: 8px;
+  }
+
+  /* Barra focal centrada y sola, debajo de la botonera */
   .focal { padding: 6px 12px; }
   .focal input[type="range"] { width: 46vw; }
+
   .plans-menu { width: min(232px, 86vw); }
-  .sun-panel { right: 12px; width: min(240px, 86vw); }
-  .hint { bottom: 112px; font-size: 12px; }
+  .sun-panel { right: 12px; width: min(240px, 86vw); bottom: 112px; }
+  .hint { bottom: 108px; font-size: 12px; }
   .person-hint, .measure-hint { max-width: 92vw; font-size: 12px; }
 }
 

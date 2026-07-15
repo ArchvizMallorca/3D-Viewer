@@ -47,18 +47,6 @@
     Arrastra para explorar · rueda para acercarte
   </div>
 
-  <!-- Panel de planos -->
-  <div class="plans" id="plans" hidden>
-    <button class="btn plans-toggle" id="plansToggle" aria-expanded="false" title="Ver planos">
-      <span class="btn-icon" aria-hidden="true">▤</span>
-      <span class="btn-label">Planos</span>
-    </button>
-    <div class="plans-menu" id="plansMenu" hidden>
-      <div class="plans-menu-title">Planos del proyecto</div>
-      <ul class="plans-list" id="plansList"></ul>
-    </div>
-  </div>
-
   <!-- Panel del sol -->
   <div class="sun-panel" id="sunPanel" hidden>
     <div class="sun-row">
@@ -71,8 +59,18 @@
     </div>
   </div>
 
-  <!-- Controles -->
+  <!-- Controles (Planos incluido como primer elemento de la botonera) -->
   <div class="ui-controls">
+    <div class="plans" id="plans" hidden>
+      <button class="btn plans-toggle" id="plansToggle" aria-expanded="false" title="Ver planos">
+        <span class="btn-icon" aria-hidden="true">▤</span>
+        <span class="btn-label">Planos</span>
+      </button>
+      <div class="plans-menu" id="plansMenu" hidden>
+        <div class="plans-menu-title">Planos del proyecto</div>
+        <ul class="plans-list" id="plansList"></ul>
+      </div>
+    </div>
     <button class="btn" id="sunBtn" title="Sol y sombras">
       <span class="btn-icon" aria-hidden="true">☀</span>
       <span class="btn-label">Sol</span>
