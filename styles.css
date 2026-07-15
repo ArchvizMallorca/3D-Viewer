@@ -698,11 +698,37 @@ body.person-active .person-touch {
   opacity: 0.6;
 }
 
-/* ---------- Móvil ---------- */
+/* ==========================================================
+   RESPONSIVE · tablet y móvil
+   Ordenamos la parte inferior en bandas que no se pisan:
+   · Banda superior  (bottom 60): Planos (izq.) + acciones (der.)
+   · Banda inferior  (bottom 12): barra focal, centrada y sola
+   · Paneles (Sol / menú planos): por encima de las acciones
+   · Modo persona: joystick y ▲▼ por encima de todo
+   ========================================================== */
+@media (max-width: 1024px) {
+  .ui-bottom { display: none; }                 /* evita chocar con la barra focal */
+  .plans { bottom: 60px; }
+  .ui-controls { bottom: 60px; flex-wrap: nowrap; }
+  .focal { bottom: 12px; }
+  .plans-menu { width: min(232px, 80vw); }
+  .sun-panel { bottom: 116px; width: min(240px, 82vw); }
+  body.person-active .person-touch { bottom: clamp(150px, 26vh, 210px); }
+}
+
+/* ---------- Teléfono: botones solo icono, márgenes ajustados ---------- */
 @media (max-width: 640px) {
-  .ui-bottom { display: none; }
-  .hint { font-size: 12px; bottom: 92px; }
-  .btn-label { display: inline; }
+  .btn:not(.person-exit) .btn-label { display: none; }  /* "Salir" conserva texto */
+  .btn { padding: 11px 13px; }
+  .btn-icon { font-size: 16px; }
+  .plans { left: 12px; }
+  .ui-controls { right: 12px; gap: 8px; }
+  .focal { padding: 6px 12px; }
+  .focal input[type="range"] { width: 46vw; }
+  .plans-menu { width: min(232px, 86vw); }
+  .sun-panel { right: 12px; width: min(240px, 86vw); }
+  .hint { bottom: 112px; font-size: 12px; }
+  .person-hint, .measure-hint { max-width: 92vw; font-size: 12px; }
 }
 
 /* En dispositivos táctiles, muestra las instrucciones de dedo */
